@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--monitorInterval：Log4j能够自动检测修改配置 文件和重新配置本身，设置间隔秒数，status用来指定log4j本身的打印日志的级别 -->
+<configuration status="WARN" monitorInterval="300">
+	<properties>
+		<!-- 切记这里配置的路径只能是这种/，不能是\，否则日志无法记录进去，如果没有配置盘符，会自动记录到应用程序所属盘符下面 -->
+		<property name="LOG_HOME">D:/usr/log</property>
+	</properties>
+
+	<!-- appenders是定义日志的输出路径 -->
+	<appenders>
+		<!--这个输出控制台的配置 -->
+		<console name="Console" target="SYSTEM_OUT">
+			<!--输出日志的格式 -->
+			<PatternLayout pattern="[%d{HH:mm:ss:SSS}] [%p] - %l - %m%n" />
+		</console>
+		<!--文件会打印出所有信息，这个log每次运行程序会自动清空，由append属性决定，这个也挺有用的，适合临时测试用 -->
+		<File name="log" fileName="log/test.log" append="false">
+			<PatternLayout
+				pattern="%d{HH:mm:ss.SSS} %-5level %class{36} %L %M - %msg%xEx%n" />
+		</File>
+
+		<!-- 这个会打印出所有的info及以下级别的信息，每次大小超过size，则这size大小的日志会自动存入按年份-月份建立的文件夹下面并进行压缩，作为存档 -->
+		<RollingFile name="RollingFileInfo" fileName="${LOG_HOME}/info.log"
+			filePattern="${LOG_HOME}/backup/$${date:yyyy-MM}/info-%d{yyyy-MM-dd}-%i.log">
+			<Filters>
+				<!--控制台只输出level及以上级别的信息（onMatch），其他的直接拒绝（onMismatch） -->
+				<ThresholdFilter level="INFO" />
+				<ThresholdFilter level="WARN" onMatch="DENY"
+					onMismatch="NEUTRAL" />
+			</Filters>
+			<PatternLayout pattern="[%d{HH:mm:ss:SSS}] [%p] - %l - %m%n" />
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="10MB" />
+			</Policies>
+		</RollingFile>
+
+		<!--warn类型日志 -->
+		<RollingFile name="RollingFileWarn" fileName="${LOG_HOME}/warn.log"
+			filePattern="${LOG_HOME}/backup/$${date:yyyy-MM}/warn-%d{yyyy-MM-dd}-%i.log">
+			<!--只记录WARN及以上级别的信息（onMatch），其他的直接拒绝（onMismatch） -->
+			<Filters>
+				<ThresholdFilter level="WARN" />
+				<ThresholdFilter level="ERROR" onMatch="DENY"
+					onMismatch="NEUTRAL" />
+			</Filters>
+			<PatternLayout pattern="[%d{HH:mm:ss:SSS}] [%p] - %l - %m%n" />
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<!--设置每个文件的大小不超过10MB -->
+				<SizeBasedTriggeringPolicy size="10MB" />
+			</Policies>
+			<!-- DefaultRolloverStrategy属性如不设置，则默认为最多同一文件夹下7个文件，这里设置了50，这个数字代表上面的i的数目 -->
+			<!-- <DefaultRolloverStrategy max="50"/> -->
+		</RollingFile>
+
+		<!-- error类型日志，filePattern是用于分割文件 -->
+		<RollingFile name="RollingFileError" fileName="${LOG_HOME}/error.log"
+			filePattern="${LOG_HOME}/backup/$${date:yyyy-MM}/error-%d{yyyy-MM-dd}-%i.log">
+			<ThresholdFilter level="ERROR" />
+			<!--日志打印格式  -->
+			<PatternLayout pattern="%-d{yyyy-MM-dd HH:mm:ss} [%thread] %m%n" />
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="10MB" />
+			</Policies>
+		</RollingFile>
+	</appenders>
+
+	<!-- 日志记录器 -->
+	<loggers>
+		<!--过滤掉spring和mybatis的一些无用的DEBUG信息 -->
+		<logger name="org.springframework" level="INFO"></logger>
+		<logger name="org.mybatis" level="INFO"></logger>
+		<!-- 日志行为等级（从低到高）OFF、FATAL、ERROR、WARN、INFO、DEBUG、ALL -->
+		<!-- Root节点用来指定项目的根日志，如果没有单独指定Logger，那么就会默认使用该Root日志输出 -->
+		<root level="all">
+			<appender-ref ref="Console" />
+			<appender-ref ref="RollingFileInfo" />
+			<appender-ref ref="RollingFileWarn" />
+			<appender-ref ref="RollingFileError" />
+		</root>
+	</loggers>
+
+</configuration>
